@@ -230,8 +230,9 @@ public class DeviceInfoPayload {
 
         property = new Device.Property();
         property.setName(Constants.Device.PHONE_NUMBER);
-        String mPhoneNumber = telephonyManager.getLine1Number();
-        property.setValue(mPhoneNumber);
+//        String mPhoneNumber = telephonyManager.getLine1Number();
+//        property.setValue(mPhoneNumber);
+        property.setValue("1232434342");
         deviceInfoProperties.add(property);
 
         try {

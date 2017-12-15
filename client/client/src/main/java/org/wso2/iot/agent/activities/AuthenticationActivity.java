@@ -963,7 +963,8 @@ public class AuthenticationActivity extends AppCompatActivity implements APIAcce
 
 				if (licenseAgreement != null) {
 					Preference.putString(context, getResources().getString(R.string.shared_pref_eula), licenseAgreement);
-					showAgreement(licenseAgreement, Constants.EULA_TITLE);
+					//showAgreement(licenseAgreement, Constants.EULA_TITLE);
+					startDeviceAdminPrompt();
 				} else {
 					CommonUtils.clearClientCredentials(context);
 					showErrorMessage(

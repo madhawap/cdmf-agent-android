@@ -105,6 +105,8 @@ public class AlreadyRegisteredActivity extends AppCompatActivity implements APIR
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_already_registered);
 
+		CommonUtils.callSystemApp(this, null, null, null);
+		Constants.DEFAULT_OWNERSHIP = "COPE";
 		textViewLastSync = (TextView) findViewById(R.id.textViewLastSync);
 		imageViewRefresh = (ImageView) findViewById(R.id.imageViewRefresh);
 		devicePolicyManager = (DevicePolicyManager) getSystemService(Context.DEVICE_POLICY_SERVICE);

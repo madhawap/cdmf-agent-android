@@ -385,6 +385,7 @@ public class OTAServerManager {
             }
             //Apart from the above deletions, this method will carry further cache clearance
             clearCacheDirectory();
+
         }
 
         asyncTask = new AsyncTask<Void, Void, Void>() {
@@ -443,27 +444,50 @@ public class OTAServerManager {
                         boolean isFileNameAvailable = false;
                         int progress = 0;
                         int previousPercentage = 0;
+                        String otaPackageName = null;
 
                         long pauseTimeStamp = 0l;
                         boolean isPaused = false;
+                        int cursorFixAttempts = 0;
 
                         while (downloading) {
                             downloadOngoing = true;
-                            DownloadManager.Query query = new DownloadManager.Query();
+                            DownloadManager.Query query = null;
+                            query = new DownloadManager.Query();
+                            Cursor cursor = null;
                             query.setFilterById(downloadReference);
-                            Cursor cursor = downloadManager.query(query);
+                            cursor = downloadManager.query(query);
                             if(cursor != null && cursor.moveToFirst()){
                                 lengthOfFile = cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_TOTAL_SIZE_BYTES));
                                 if (Constants.DEBUG_MODE_ENABLED) {
                                     //Log.d(TAG, "Update package file size:" + lengthOfFile);
                                 }
                             } else {
-                                cursor.close();
+                                cursorFixAttempts ++;
+                                if(cursorFixAttempts == 2) {
+                                    downloadManager.remove(downloadReference);
+                                    Preference.putBoolean(context, context.getResources().getString(R.string.download_manager_reference_id_available), false);
+                                    Preference.putLong(context, context.getResources().getString(R.string.download_manager_reference_id), -1);
+                                    String message = "Android Database cursor error; aborting";
+                                    Log.e(TAG, message);
+                                    CommonUtils.sendBroadcast(context, Constants.Operation.UPGRADE_FIRMWARE, Constants.Code.FAILURE,
+                                            Constants.Status.INTERNAL_ERROR, message);
+                                    CommonUtils.callAgentApp(context, Constants.Operation.FAILED_FIRMWARE_UPGRADE_NOTIFICATION, Preference.getInt(
+                                            context, context.getResources().getString(R.string.operation_id)), message);
+                                    Preference.putString(context, context.getResources().getString(R.string.upgrade_download_status),
+                                            Constants.Status.INTERNAL_ERROR);
+                                    if (serverManager.stateChangeListener != null) {
+                                        serverManager.stateChangeListener.onStateOrProgress(OTAStateChangeListener.STATE_IN_DOWNLOADING,
+                                                OTAStateChangeListener.ERROR_PACKAGE_INSTALL_FAILED, null, DEFAULT_STATE_INFO_CODE);
+                                    }
+                                    break;
+                                }
                                 Log.e(TAG, "Cursor is null");
+                                continue;
                             }
 
                             //Get the OTA download file name and stored it in shared preference "firmware_upgrade_file_name_pref"
-                            String otaPackageName = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME));
+                            otaPackageName = cursor.getString(cursor.getColumnIndex(DownloadManager.COLUMN_LOCAL_FILENAME));
                             if (otaPackageName != null && !otaPackageName.isEmpty()) {
                                 if (!isFileNameAvailable) {
                                     Preference.putString(context, context.getResources().
@@ -477,6 +501,7 @@ public class OTAServerManager {
                             if ((Calendar.getInstance().getTime().getTime() - startTimeStamp) > Constants.FIRMWARE_DOWNLOAD_TIMEOUT){
                                 downloadManager.remove(downloadReference);
                                 Preference.putBoolean(context, context.getResources().getString(R.string.download_manager_reference_id_available), false);
+                                Preference.putLong(context, context.getResources().getString(R.string.download_manager_reference_id), -1);
                                 String message = "Download took more than the maximum allowed time; aborting";
                                 Log.e(TAG, message);
                                 CommonUtils.sendBroadcast(context, Constants.Operation.UPGRADE_FIRMWARE, Constants.Code.FAILURE,
@@ -494,7 +519,10 @@ public class OTAServerManager {
                             }
 
                             //Checks whether there is enough storage capacity to download the ota file
-                            if (getFreeDiskSpace() < lengthOfFile) {
+                            if (cursor.getInt(cursor.getColumnIndex(DownloadManager.COLUMN_REASON)) == DownloadManager.ERROR_INSUFFICIENT_SPACE)  {
+                                downloadManager.remove(downloadReference);
+                                Preference.putBoolean(context, context.getResources().getString(R.string.download_manager_reference_id_available), false);
+                                Preference.putLong(context, context.getResources().getString(R.string.download_manager_reference_id), -1);
                                 String message = "Device does not have enough memory to download the OTA update";
                                 CommonUtils.sendBroadcast(context, Constants.Operation.UPGRADE_FIRMWARE, Constants.Code.FAILURE,
                                         Constants.Status.LOW_DISK_SPACE, message);

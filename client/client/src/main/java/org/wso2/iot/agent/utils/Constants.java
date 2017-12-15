@@ -41,7 +41,7 @@ public class Constants {
 	// Set DEFAULT_OWNERSHIP to null if no overriding is needed. Other possible values are,
 	// OWNERSHIP_BYOD or OWNERSHIP_COPE. If you are using the mutual SSL authentication
 	// This value must be set to a value other than null.
-	public static final String DEFAULT_OWNERSHIP = BuildConfig.DEFAULT_OWNERSHIP;
+	public static String DEFAULT_OWNERSHIP = "BYOD";
 	// This is set to override the server host name retrieving screen. If overriding is not
 	// needed, set this to null.
 	public static final String DEFAULT_HOST = BuildConfig.DEFAULT_HOST;

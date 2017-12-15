@@ -39,10 +39,10 @@ android {
 
     signingConfigs {
         config {
-            keyAlias ''
-            keyPassword ''
-            storeFile file('')
-            storePassword ''
+            keyAlias 'platform'
+            keyPassword 'android'
+            storeFile file('../../swordfish.keystore')
+            storePassword 'android'
         }
     }
 
